@@ -1,0 +1,36 @@
+[package]
+name = "discord-finals-tts"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1.0.48"
+http = "1.3.1"
+chrono = "0.4.40"
+futures-core = "0.3"                                   # Needed for the `Stream` trait
+futures = "0.3"
+bytes = "1.10.1"
+async-tempfile = "0.7.0"
+
+# Required for Dockerfile builds, see https://stackoverflow.com/questions/70561544/rust-openssl-could-not-find-directory-of-openssl-installation
+openssl = { version = "0.10", features = ["vendored"] }
+
+#########################
+### Discord Libraries ###
+#########################
+serenity = "0.12"
+songbird = { version = "0.5", features = [
+    "builtin-queue",
+] } # Including songbird alone gives you support for Opus via the DCA file format.
+# To get additional codecs, you *must* add Symphonia yourself.
+# This includes the default formats (MKV/WebM, Ogg, Wave) and codecs (FLAC, PCM, Vorbis)...
+symphonia = { version = "0.5", features = [
+    "aac",
+    "mp3",
+    "isomp4",
+    "alac",
+] } # ...as well as any extras you need!
+poise = "0.6.1"
