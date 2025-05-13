@@ -2,3 +2,6 @@ ELEVENLABS_TOKEN
 DISCORD_TOKEN
 target
 .vscode
+env
+env-dev
+env-prod

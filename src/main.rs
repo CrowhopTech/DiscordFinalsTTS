@@ -2,13 +2,13 @@ mod elevenlabs;
 mod streamutil;
 mod types;
 
-use crate::elevenlabs::types::KnownVoice;
-use crate::streamutil::write_stream_to_vec_u8;
-use crate::types::VoiceOption;
+use ::poise::{CreateReply, serenity_prelude as serenity};
 use ::serenity::all::CreateAttachment;
-use elevenlabs::types::MP3_44100HZ_128KBPS;
-use poise::{CreateReply, serenity_prelude as serenity};
-use types::Data;
+
+use crate::elevenlabs::types::{KnownVoice, MP3_44100HZ_128KBPS};
+use crate::streamutil::write_stream_to_vec_u8;
+use crate::types::Data;
+use crate::types::VoiceOption;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -47,7 +47,7 @@ async fn speak(
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     let discord_token = std::env::var(DISCORD_TOKEN_ENV)
         .unwrap_or_else(|_| panic!("Please set the {} environment variable", DISCORD_TOKEN_ENV));
     let elevenlabs_token = std::env::var(ELEVENLABS_TOKEN_ENV).unwrap_or_else(|_| {
@@ -66,7 +66,7 @@ async fn main() {
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                let el_client = elevenlabs::ElevenLabs::new_from_key(elevenlabs_token);
+                let el_client = elevenlabs::ElevenLabs::new_from_key(elevenlabs_token.to_string());
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
 
                 Ok(Data { client: el_client })
@@ -74,8 +74,11 @@ async fn main() {
         })
         .build();
 
-    let client = serenity::ClientBuilder::new(discord_token, intents)
+    println!("Token: {}", discord_token);
+    let mut client = serenity::ClientBuilder::new(discord_token, intents)
         .framework(framework)
-        .await;
-    client.unwrap().start().await.unwrap();
+        .await?;
+    client.start().await?;
+
+    Ok(())
 }

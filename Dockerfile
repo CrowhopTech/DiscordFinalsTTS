@@ -15,4 +15,4 @@ RUN cargo build --release
 FROM alpine:3.21.3
 COPY --from=builder /usr/src/scavengerlabs/target/release/discord-finals-tts /discord-finals-tts
 USER 1000
-CMD ["discord-finals-tts"]
+CMD ["/discord-finals-tts"]
