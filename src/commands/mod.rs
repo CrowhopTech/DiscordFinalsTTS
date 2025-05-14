@@ -1,6 +1,7 @@
 pub mod join_voice;
 pub mod leave_voice;
 pub mod speak;
+pub mod speak_vs;
 
 use poise::serenity_prelude as serenity;
 use serenity::async_trait;

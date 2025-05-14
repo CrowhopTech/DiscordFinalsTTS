@@ -3,7 +3,9 @@ mod elevenlabs;
 mod streamutil;
 mod types;
 
-use crate::commands::{join_voice::join_voice, leave_voice::leave_voice, speak::speak};
+use crate::commands::{
+    join_voice::join_voice, leave_voice::leave_voice, speak::speak, speak_vs::speak_vs,
+};
 use crate::types::{Data, Error, HttpKey};
 
 use ::poise::serenity_prelude as serenity;
@@ -57,7 +59,7 @@ async fn main() -> Result<(), Error> {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![speak(), join_voice(), leave_voice()],
+            commands: vec![speak(), speak_vs(), join_voice(), leave_voice()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
