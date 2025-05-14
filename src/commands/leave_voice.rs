@@ -1,3 +1,4 @@
+use crate::commands::util::get_channel_name;
 use crate::types::{Context, Error};
 
 use ::poise::CreateReply;
@@ -24,12 +25,7 @@ pub async fn leave_voice(ctx: Context<'_>) -> Result<(), Error> {
                 if ctx.guild().expect("a guild").channels.contains_key(&cid) {
                     ctx.say(format!(
                         "Leaving channel {}",
-                        &ctx.guild()
-                            .expect("a guild")
-                            .channels
-                            .get(&cid)
-                            .expect("a valid channel")
-                            .name
+                        get_channel_name(&ctx, channel)?,
                     ))
                     .await?;
                 } else {

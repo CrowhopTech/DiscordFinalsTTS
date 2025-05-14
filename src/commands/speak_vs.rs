@@ -1,8 +1,9 @@
-use ::poise::CreateReply;
-
+use crate::commands::util::get_channel_name;
 use crate::elevenlabs::types::{KnownVoice, MP3_44100HZ_128KBPS};
 use crate::streamutil::write_stream_to_vec_u8;
 use crate::types::{Context, Error, VoiceOption};
+
+use ::poise::CreateReply;
 
 /// Generates some speech using the given voice and posts it in the currently joined voice channel
 #[poise::command(slash_command, prefix_command)]
@@ -38,8 +39,16 @@ pub async fn speak_vs(
         let mut handler = handler_lock.lock().await;
 
         if let Some(channel) = handler.current_channel() {
-            ctx.send(CreateReply::default().content(format!("Speaking in channel {}", channel.0)))
-                .await?;
+            ctx.send(
+                CreateReply::default().content(
+                    format!(
+                        "Speaking in channel \"{}\"",
+                        get_channel_name(&ctx, channel)?
+                    )
+                    .as_str(),
+                ),
+            )
+            .await?;
             let _ = handler.play_input(bytes.into());
         } else {
             ctx.send(CreateReply::default().content("Not in a voice channel"))

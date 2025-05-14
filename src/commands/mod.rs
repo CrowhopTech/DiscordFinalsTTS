@@ -3,6 +3,8 @@ pub mod leave_voice;
 pub mod speak;
 pub mod speak_vs;
 
+mod util;
+
 use poise::serenity_prelude as serenity;
 use serenity::async_trait;
 use songbird::events::{Event, EventContext, EventHandler as VoiceEventHandler};
