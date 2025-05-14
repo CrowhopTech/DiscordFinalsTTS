@@ -1,67 +1,63 @@
+mod commands;
 mod elevenlabs;
 mod streamutil;
 mod types;
 
-use ::poise::{CreateReply, serenity_prelude as serenity};
-use ::serenity::all::CreateAttachment;
+use crate::commands::{join_voice::join_voice, leave_voice::leave_voice, speak::speak};
+use crate::types::{Data, Error, HttpKey};
 
-use crate::elevenlabs::types::{KnownVoice, MP3_44100HZ_128KBPS};
-use crate::streamutil::write_stream_to_vec_u8;
-use crate::types::Data;
-use crate::types::VoiceOption;
+use ::poise::serenity_prelude as serenity;
 
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+// This trait adds the `register_songbird` and `register_songbird_with` methods
+// to the client builder below, making it easy to install this voice client.
+// The voice client can be retrieved in any command using `songbird::get(ctx).await`.
+use ::songbird::SerenityInit;
 
-const DISCORD_TOKEN_ENV: &str = "DISCORD_TOKEN";
-const ELEVENLABS_TOKEN_ENV: &str = "ELEVENLABS_TOKEN";
+fn parse_env() -> Result<(String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let discord_token: String;
+    let elevenlabs_token: String;
 
-/// Generates some speech using the given voice and posts it as a sound snippet
-#[poise::command(slash_command, prefix_command)]
-async fn speak(
-    ctx: Context<'_>,
-    #[description = "Voice to use"] voice: VoiceOption,
-    #[description = "Text to speak"] text: String,
-) -> Result<(), Error> {
-    let v: KnownVoice = voice.into();
-    let gen_res = ctx
-        .data()
-        .client
-        .generate_voice(v.get_id(), text, Some(MP3_44100HZ_128KBPS))
-        .await;
-    if let Err(e) = gen_res {
-        ctx.send(CreateReply::default().content(format!("Error: {:?}", e)))
-            .await?;
-        return Ok(());
+    match std::env::var(crate::types::DISCORD_TOKEN_ENV) {
+        Ok(token) => {
+            discord_token = token;
+        }
+        Err(_) => {
+            return Err(format!(
+                "Please set the {} environment variable",
+                crate::types::DISCORD_TOKEN_ENV
+            )
+            .into());
+        }
     }
-    let generated = gen_res.unwrap();
 
-    let bytes = write_stream_to_vec_u8(generated).await?;
+    match std::env::var(crate::types::ELEVENLABS_TOKEN_ENV) {
+        Ok(token) => {
+            elevenlabs_token = token;
+        }
+        Err(_) => {
+            return Err(format!(
+                "Please set the {} environment variable",
+                crate::types::ELEVENLABS_TOKEN_ENV
+            )
+            .into());
+        }
+    }
 
-    ctx.send(
-        CreateReply::default().attachment(CreateAttachment::bytes(bytes, "Generated voice.mp3")),
-    )
-    .await?;
-
-    Ok(())
+    Ok((discord_token, elevenlabs_token))
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let discord_token = std::env::var(DISCORD_TOKEN_ENV)
-        .unwrap_or_else(|_| panic!("Please set the {} environment variable", DISCORD_TOKEN_ENV));
-    let elevenlabs_token = std::env::var(ELEVENLABS_TOKEN_ENV).unwrap_or_else(|_| {
-        panic!(
-            "Please set the {} environment variable",
-            ELEVENLABS_TOKEN_ENV
-        )
-    });
+    let (discord_token, elevenlabs_token) = parse_env().map_err(|e| {
+        eprintln!("Error parsing environment variables: {}", e);
+        e
+    })?;
 
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![speak()],
+            commands: vec![speak(), join_voice(), leave_voice()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
@@ -74,10 +70,12 @@ async fn main() -> Result<(), Error> {
         })
         .build();
 
-    println!("Token: {}", discord_token);
     let mut client = serenity::ClientBuilder::new(discord_token, intents)
         .framework(framework)
+        .register_songbird()
+        .type_map_insert::<HttpKey>(reqwest::Client::new())
         .await?;
+    println!("Starting Finals TTS bot...");
     client.start().await?;
 
     Ok(())
