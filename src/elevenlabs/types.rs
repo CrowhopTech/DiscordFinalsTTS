@@ -31,14 +31,17 @@ pub enum SpeechSpeed {
 pub enum KnownVoice {
     Scotty,
     June,
+    UnrealTournament,
 }
 
 impl KnownVoice {
     pub fn get_id(&self) -> String {
         match self {
-            KnownVoice::Scotty => "OzxGhSRE3FmszopZTbZE".to_string(),
-            KnownVoice::June => "79931Esd1pNmtJORtUBI".to_string(),
+            KnownVoice::Scotty => "OzxGhSRE3FmszopZTbZE",
+            KnownVoice::June => "79931Esd1pNmtJORtUBI",
+            KnownVoice::UnrealTournament => "YOq2y2Up4RgXP2HyXjE5",
         }
+        .to_string()
     }
 
     pub fn get_default_voice_settings(&self) -> VoiceSettings {
@@ -55,6 +58,7 @@ impl KnownVoice {
         match self {
             KnownVoice::Scotty => 0.0,
             KnownVoice::June => 0.0,
+            KnownVoice::UnrealTournament => 0.0,
         }
     }
 
@@ -62,6 +66,7 @@ impl KnownVoice {
         match self {
             KnownVoice::Scotty => SpeechSpeed::Normal,
             KnownVoice::June => SpeechSpeed::Normal,
+            KnownVoice::UnrealTournament => SpeechSpeed::Normal,
         }
     }
 
@@ -77,6 +82,11 @@ impl KnownVoice {
                 SpeechSpeed::Fast => 1.2,
             },
             KnownVoice::June => match r_speed {
+                SpeechSpeed::Slow => 0.7,
+                SpeechSpeed::Normal => 1.0,
+                SpeechSpeed::Fast => 1.2,
+            },
+            KnownVoice::UnrealTournament => match r_speed {
                 SpeechSpeed::Slow => 0.7,
                 SpeechSpeed::Normal => 1.0,
                 SpeechSpeed::Fast => 1.2,
