@@ -72,12 +72,12 @@ impl KnownVoice {
         };
         match self {
             KnownVoice::Scotty => match r_speed {
-                SpeechSpeed::Slow => 0.8,
+                SpeechSpeed::Slow => 0.7,
                 SpeechSpeed::Normal => 1.0,
                 SpeechSpeed::Fast => 1.2,
             },
             KnownVoice::June => match r_speed {
-                SpeechSpeed::Slow => 0.8,
+                SpeechSpeed::Slow => 0.7,
                 SpeechSpeed::Normal => 1.0,
                 SpeechSpeed::Fast => 1.2,
             },

@@ -94,17 +94,15 @@ async fn generate_speech_bytes(
 ) -> Result<Vec<u8>, Error> {
     let v: KnownVoice = voice.into();
 
-    let voice_settings = VoiceSettings {
-        speed: Some(v.get_speed(speed)),
-        ..v.get_default_voice_settings()
-    };
-
     Ok(write_stream_to_vec_u8(
         client
             .generate_voice(
                 v.get_id(),
                 text,
-                Some(voice_settings),
+                Some(VoiceSettings {
+                    speed: Some(v.get_speed(speed)),
+                    ..v.get_default_voice_settings()
+                }),
                 Some(MP3_44100HZ_128KBPS),
             )
             .await?,
