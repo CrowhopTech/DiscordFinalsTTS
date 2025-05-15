@@ -1,7 +1,5 @@
-pub mod join_voice;
-pub mod leave_voice;
+pub mod join_leave;
 pub mod speak;
-pub mod speak_vs;
 
 mod util;
 

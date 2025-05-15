@@ -4,7 +4,8 @@ mod streamutil;
 mod types;
 
 use crate::commands::{
-    join_voice::join_voice, leave_voice::leave_voice, speak::speak, speak_vs::speak_vs,
+    join_leave::{join_voice, leave_voice},
+    speak::{speak, speak_vs},
 };
 use crate::types::{Data, Error, HttpKey};
 

@@ -3,6 +3,7 @@ use tokio::{fs::File, io::AsyncWriteExt};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
+#[allow(dead_code)]
 pub async fn write_stream_to_file(
     stream: impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>,
     file: &mut File,
@@ -24,6 +25,7 @@ pub async fn write_stream_to_file(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn write_stream_to_filename(
     stream: impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>,
     path: &str,
@@ -38,6 +40,7 @@ pub async fn write_stream_to_filename(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn write_stream_to_vec_u8(
     stream: impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>,
 ) -> Result<Vec<u8>, Error> {

@@ -1,11 +1,13 @@
+pub mod media;
 pub mod requests;
 pub mod responses;
 pub mod types;
 
 use bytes::Bytes;
+use media::DEFAULT_OUTPUT_FORMAT;
 use responses::VoiceList;
 use serde::Serialize;
-use types::DEFAULT_OUTPUT_FORMAT;
+use types::VoiceSettings;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -48,6 +50,7 @@ impl ElevenLabs {
             .query(&query)
     }
 
+    #[allow(dead_code)]
     async fn execute_request_json_response<ResultType: serde::de::DeserializeOwned>(
         &self,
         req: reqwest::RequestBuilder,
@@ -75,6 +78,7 @@ impl ElevenLabs {
         }
     }
 
+    #[allow(dead_code)]
     async fn execute_request_cursor_response(
         &self,
         req: reqwest::RequestBuilder,
@@ -93,6 +97,7 @@ impl ElevenLabs {
         }
     }
 
+    #[allow(dead_code)]
     async fn run_json_request_with_body<
         ResultType: serde::de::DeserializeOwned,
         BodyType: Serialize + Sized,
@@ -105,6 +110,7 @@ impl ElevenLabs {
             .await
     }
 
+    #[allow(dead_code)]
     async fn run_json_request_no_body<ResultType: serde::de::DeserializeOwned>(
         &self,
         base_req: reqwest::RequestBuilder,
@@ -112,6 +118,7 @@ impl ElevenLabs {
         self.execute_request_json_response(base_req).await
     }
 
+    #[allow(dead_code)]
     async fn run_cursor_request_with_body<BodyType: Serialize + Sized>(
         &self,
         base_req: reqwest::RequestBuilder,
@@ -121,6 +128,7 @@ impl ElevenLabs {
             .await
     }
 
+    #[allow(dead_code)]
     async fn run_cursor_request_no_body(
         &self,
         base_req: reqwest::RequestBuilder,
@@ -139,7 +147,8 @@ impl ElevenLabs {
         &self,
         voice_id: String,
         text: String,
-        media_format: Option<&types::OutputFormat>,
+        voice_settings: Option<VoiceSettings>,
+        media_format: Option<&media::OutputFormat>,
     ) -> Result<impl futures_core::Stream<Item = reqwest::Result<Bytes>>, Error> {
         let final_format = match media_format {
             Some(format) => format,
@@ -159,8 +168,8 @@ impl ElevenLabs {
             self.post_base_request(&format!("v1/text-to-speech/{}", voice_id), Vec::new()),
             Some(requests::CreateSpeechRequest {
                 text,
+                voice_settings,
                 model_id: None,
-                voice_settings: None,
             }),
         )
         .await

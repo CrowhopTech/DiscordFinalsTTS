@@ -20,6 +20,14 @@ pub struct VoiceSettings {
     pub speed: Option<f32>,
 }
 
+#[derive(poise::ChoiceParameter)]
+pub enum SpeechSpeed {
+    Slow,
+    Normal,
+    Fast,
+}
+
+#[derive(poise::ChoiceParameter)]
 pub enum KnownVoice {
     Scotty,
     June,
@@ -32,42 +40,47 @@ impl KnownVoice {
             KnownVoice::June => "79931Esd1pNmtJORtUBI".to_string(),
         }
     }
-}
 
-pub enum MediaFormat {
-    MP3,
-}
-
-impl MediaFormat {
-    pub fn to_str(&self) -> &str {
-        match self {
-            MediaFormat::MP3 => "mp3",
+    pub fn get_default_voice_settings(&self) -> VoiceSettings {
+        VoiceSettings {
+            stability: None,
+            similarity_boost: None,
+            style: Some(self.get_default_style_exaggeration()),
+            use_speaker_boost: None,
+            speed: Some(self.get_speed(None)),
         }
     }
-}
 
-pub struct OutputFormat(MediaFormat, i32, i32); // Use &str as it's a constant string
-
-pub static DEFAULT_OUTPUT_FORMAT: &OutputFormat = MP3_44100HZ_128KBPS;
-pub static MP3_44100HZ_128KBPS: &OutputFormat = &OutputFormat(MediaFormat::MP3, 44100, 128000);
-
-impl OutputFormat {
-    #[allow(dead_code)]
-    pub fn get_format(&self) -> &MediaFormat {
-        &self.0
+    pub fn get_default_style_exaggeration(&self) -> f32 {
+        match self {
+            KnownVoice::Scotty => 0.0,
+            KnownVoice::June => 0.0,
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn get_sample_rate(&self) -> i32 {
-        self.1
+    pub fn default_speed(&self) -> SpeechSpeed {
+        match self {
+            KnownVoice::Scotty => SpeechSpeed::Normal,
+            KnownVoice::June => SpeechSpeed::Normal,
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn get_bitrate(&self) -> i32 {
-        self.2
-    }
-
-    pub fn to_string(&self) -> String {
-        format!("{}_{}_{}", self.0.to_str(), self.1, self.2)
+    pub fn get_speed(&self, speed: Option<SpeechSpeed>) -> f32 {
+        let r_speed = match speed {
+            Some(s) => s,
+            None => self.default_speed(),
+        };
+        match self {
+            KnownVoice::Scotty => match r_speed {
+                SpeechSpeed::Slow => 0.8,
+                SpeechSpeed::Normal => 1.0,
+                SpeechSpeed::Fast => 1.2,
+            },
+            KnownVoice::June => match r_speed {
+                SpeechSpeed::Slow => 0.8,
+                SpeechSpeed::Normal => 1.0,
+                SpeechSpeed::Fast => 1.2,
+            },
+        }
     }
 }
