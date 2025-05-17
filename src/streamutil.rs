@@ -1,5 +1,6 @@
-use futures::{StreamExt, pin_mut};
-use tokio::{fs::File, io::AsyncWriteExt};
+use ::futures::{StreamExt, pin_mut};
+use ::log::error;
+use ::tokio::{fs::File, io::AsyncWriteExt};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -16,7 +17,7 @@ pub async fn write_stream_to_file(
                 file.write_all(&bytes).await?;
             }
             Err(e) => {
-                println!("Error: {:?}", e);
+                error!(error = e.to_string().as_str(); "Error writing stream to file");
                 break;
             }
         }
@@ -54,8 +55,8 @@ pub async fn write_stream_to_vec_u8(
                 bytes.extend(thing);
             }
             Err(e) => {
-                println!("Error: {:?}", e);
-                break;
+                error!(error = e.to_string().as_str(); "Error writing stream to vec");
+                return Err(Box::new(e));
             }
         }
     }

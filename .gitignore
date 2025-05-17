@@ -5,3 +5,5 @@ target
 env
 env-dev
 env-prod
+run-dev.sh
+run-prod.sh

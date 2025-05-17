@@ -9,6 +9,7 @@ use crate::commands::{
 };
 use crate::types::{Data, Error, HttpKey};
 
+use ::log::{error, info};
 use ::poise::serenity_prelude as serenity;
 
 // This trait adds the `register_songbird` and `register_songbird_with` methods
@@ -51,8 +52,10 @@ fn parse_env() -> Result<(String, String), Box<dyn std::error::Error + Send + Sy
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    env_logger::init();
+
     let (discord_token, elevenlabs_token) = parse_env().map_err(|e| {
-        eprintln!("Error parsing environment variables: {}", e);
+        error!(error = e.to_string().as_str(); "Error parsing environment variables");
         e
     })?;
 
@@ -78,7 +81,7 @@ async fn main() -> Result<(), Error> {
         .register_songbird()
         .type_map_insert::<HttpKey>(reqwest::Client::new())
         .await?;
-    println!("Starting Finals TTS bot...");
+    info!("Starting Finals TTS bot...");
     client.start().await?;
 
     Ok(())

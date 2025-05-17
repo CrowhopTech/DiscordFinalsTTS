@@ -1,5 +1,6 @@
 use ::poise::CreateReply;
 use ::serenity::all::CreateAttachment;
+use log::{error, info};
 
 use crate::commands::util::get_channel_name;
 use crate::elevenlabs::ElevenLabs;
@@ -92,20 +93,29 @@ async fn generate_speech_bytes(
     text: String,
     speed: Option<SpeechSpeed>,
 ) -> Result<Vec<u8>, Error> {
-    let v: KnownVoice = voice.into();
+    info!(
+        voice = voice, speed = speed, text = text.as_str();
+        "Generating text"
+    );
 
     Ok(write_stream_to_vec_u8(
         client
             .generate_voice(
-                v.get_id(),
-                text,
+                voice.get_id(),
+                text.clone(),
                 Some(VoiceSettings {
-                    speed: Some(v.get_speed(speed)),
-                    ..v.get_default_voice_settings()
+                    speed: Some(voice.get_speed(speed)),
+                    ..voice.get_default_voice_settings()
                 }),
                 Some(MP3_44100HZ_128KBPS),
             )
             .await?,
     )
-    .await?)
+    .await
+    .inspect_err(|e| {
+        error!(
+            voice = voice, speed = speed, text = text.as_str(), error = e.to_string().as_str();
+            "Failed to generate text",
+        );
+    })?)
 }

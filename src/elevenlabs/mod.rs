@@ -4,6 +4,7 @@ pub mod responses;
 pub mod types;
 
 use bytes::Bytes;
+use log::{debug, error, info};
 use media::DEFAULT_OUTPUT_FORMAT;
 use responses::VoiceList;
 use serde::Serialize;
@@ -56,7 +57,7 @@ impl ElevenLabs {
         req: reqwest::RequestBuilder,
     ) -> Result<ResultType, Error> {
         let built_req = req.build()?;
-        println!("Sending request to {}", built_req.url());
+        debug!(url = built_req.url().as_str(); "Sending request");
         let resp = self.client.execute(built_req).await?;
         let status = resp.status();
         let text = resp.text().await?;
@@ -67,14 +68,14 @@ impl ElevenLabs {
                 Ok(p) => Ok(p),
                 Err(e) => {
                     // Parsing error
-                    println!("Failed to parse body! {text}");
+                    error!(error = e.to_string().as_str(), text = text.as_str(); "Failed to parse response");
                     Err(e)?
                 }
             }
         } else {
             // HTTP error here...
-            println!("HTTP request failed! Body: {text}");
-            Err(format!("HTTP {}", status.as_str()))?
+            error!(response_body = text.as_str(), status = status.as_str(); "HTTP request failed");
+            Err(format!("Error HTTP {}: {}", status.as_str(), text))?
         }
     }
 
@@ -84,7 +85,7 @@ impl ElevenLabs {
         req: reqwest::RequestBuilder,
     ) -> Result<impl futures_core::Stream<Item = reqwest::Result<Bytes>>, Error> {
         let built_req = req.build()?;
-        println!("Sending request (getting raw body) to {}", built_req.url());
+        debug!(url = built_req.url().as_str(); "Sending request (getting raw body)");
         let resp = self.client.execute(built_req).await?;
         let status = resp.status();
         if status.is_success() {
@@ -92,8 +93,8 @@ impl ElevenLabs {
         } else {
             // HTTP error here...
             let text = resp.text().await?;
-            println!("HTTP request failed! Body: {text}");
-            Err(format!("HTTP {}", status.as_str()))?
+            error!(response_body = text.as_str(), status = status.as_str(); "HTTP request failed");
+            Err(format!("Error HTTP {}: {}", status.as_str(), text))?
         }
     }
 
@@ -154,7 +155,7 @@ impl ElevenLabs {
             Some(format) => format,
             None => {
                 let format = DEFAULT_OUTPUT_FORMAT;
-                println!(
+                info!(
                     "No media format provided, using default {}",
                     format.to_string()
                 );
@@ -163,6 +164,11 @@ impl ElevenLabs {
         };
         let mut query = Vec::new();
         query.push(("output_format", final_format.to_string()));
+
+        info!(
+            voice_id = voice_id.as_str(), text = text.as_str();
+            "Generating voice with options {:?}", voice_settings
+        );
 
         self.run_cursor_request_with_body(
             self.post_base_request(&format!("v1/text-to-speech/{}", voice_id), Vec::new()),
