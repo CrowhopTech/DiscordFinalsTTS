@@ -1,6 +1,7 @@
 use ::poise::CreateReply;
 use ::serenity::all::CreateAttachment;
 use log::{error, info};
+use serenity::all::EditMessage;
 
 use crate::commands::util::get_channel_name;
 use crate::elevenlabs::ElevenLabs;
@@ -17,6 +18,14 @@ pub async fn speak(
     #[description = "Text to speak"] text: String,
     #[description = "Speed of the speech"] speed: Option<SpeechSpeed>,
 ) -> Result<(), Error> {
+    let sent_msg_handle = ctx
+        .send(CreateReply::default().content("Generating voice..."))
+        .await?;
+    let mut sent_msg = sent_msg_handle.into_message().await.map_err(|e| {
+        error!(error = e.to_string().as_str(); "Failed to convert message to Message");
+        Error::from(e)
+    })?;
+
     let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed).await {
         Err(e) => {
             ctx.send(CreateReply::default().content(format!("Failed to generate voice: {}", e)))
@@ -26,10 +35,17 @@ pub async fn speak(
         Ok(b) => b,
     };
 
-    ctx.send(
-        CreateReply::default().attachment(CreateAttachment::bytes(bytes, "Generated voice.mp3")),
-    )
-    .await?;
+    sent_msg
+        .edit(
+            ctx.http(),
+            EditMessage::default()
+                .new_attachment(CreateAttachment::bytes(
+                    bytes.clone(),
+                    "Generated voice.mp3",
+                ))
+                .content("Generated voice"),
+        )
+        .await?;
 
     Ok(())
 }
@@ -42,18 +58,8 @@ pub async fn speak_vs(
     #[description = "Text to speak"] text: String,
     #[description = "Speed of the speech"] speed: Option<SpeechSpeed>,
 ) -> Result<(), Error> {
-    let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed).await {
-        Err(e) => {
-            ctx.send(CreateReply::default().content(format!("Failed to generate voice: {}", e)))
-                .await?;
-            return Ok(());
-        }
-        Ok(b) => b,
-    };
-
     let guild = ctx.guild().ok_or("Not in a guild")?.id;
     let sctx = ctx.serenity_context();
-
     let manager = songbird::get(&sctx)
         .await
         .expect("Songbird Voice client placed in at initialization")
@@ -63,16 +69,50 @@ pub async fn speak_vs(
         let mut handler = handler_lock.lock().await;
 
         if let Some(channel) = handler.current_channel() {
-            ctx.send(
-                CreateReply::default().content(
-                    format!(
-                        "Speaking in channel \"{}\"",
-                        get_channel_name(&ctx, channel)?
+            let sent_msg_handle = ctx
+                .send(
+                    CreateReply::default().content(
+                        format!(
+                            "Generating voice to speak in channel \"{}\"...",
+                            get_channel_name(&ctx, channel)?
+                        )
+                        .as_str(),
+                    ),
+                )
+                .await?;
+            let mut sent_msg = sent_msg_handle.into_message().await.map_err(|e| {
+                error!(error = e.to_string().as_str(); "Failed to convert message to Message");
+                Error::from(e)
+            })?;
+
+            let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed).await {
+                Err(e) => {
+                    ctx.send(
+                        CreateReply::default().content(format!("Failed to generate voice: {}", e)),
                     )
-                    .as_str(),
-                ),
-            )
-            .await?;
+                    .await?;
+                    return Ok(());
+                }
+                Ok(b) => b,
+            };
+            sent_msg
+                .edit(
+                    ctx.http(),
+                    EditMessage::default()
+                        .new_attachment(CreateAttachment::bytes(
+                            bytes.clone(),
+                            "Generated voice.mp3",
+                        ))
+                        .content(
+                            format!(
+                                "Speaking in channel \"{}\"",
+                                get_channel_name(&ctx, channel)?
+                            )
+                            .as_str(),
+                        ),
+                )
+                .await?;
+
             let _ = handler.play_input(bytes.into());
         } else {
             ctx.send(CreateReply::default().content("Not in a voice channel"))
