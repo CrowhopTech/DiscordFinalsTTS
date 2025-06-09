@@ -6,6 +6,7 @@ mod types;
 use crate::commands::{
     join_leave::{join_voice, leave_voice},
     speak::{speak, speak_vs},
+    usage::show_usage,
 };
 use crate::types::{Data, Error, HttpKey};
 
@@ -63,7 +64,13 @@ async fn main() -> Result<(), Error> {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![speak(), speak_vs(), join_voice(), leave_voice()],
+            commands: vec![
+                speak(),
+                speak_vs(),
+                join_voice(),
+                leave_voice(),
+                show_usage(),
+            ],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

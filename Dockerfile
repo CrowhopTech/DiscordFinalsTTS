@@ -1,5 +1,5 @@
 # Build Stage
-FROM rust:1.86-alpine AS builder
+FROM docker.io/rust:1.86-alpine AS builder
 WORKDIR /usr/src/
 
 RUN USER=root cargo new scavengerlabs
@@ -12,7 +12,7 @@ COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 
 # Bundle Stage
-FROM alpine:3.21.3
+FROM docker.io/alpine:3.21.3
 COPY --from=builder /usr/src/scavengerlabs/target/release/discord-finals-tts /discord-finals-tts
 USER 1000
 CMD ["/discord-finals-tts"]

@@ -6,9 +6,10 @@ pub mod types;
 use bytes::Bytes;
 use log::{debug, error, info};
 use media::DEFAULT_OUTPUT_FORMAT;
-use responses::VoiceList;
+use responses::{UserInfo, VoiceList};
 use serde::Serialize;
 use types::VoiceSettings;
+use chrono::DateTime;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -135,6 +136,18 @@ impl ElevenLabs {
         base_req: reqwest::RequestBuilder,
     ) -> Result<impl futures_core::Stream<Item = reqwest::Result<Bytes>>, Error> {
         self.execute_request_cursor_response(base_req).await
+    }
+
+    pub async fn get_usage(&self) -> Result<(i64, i64, Option<DateTime<chrono::Utc>>), Error> {
+        let user_info = self
+            .run_json_request_no_body::<UserInfo>(self.get_base_request("v1/user", Vec::new()))
+            .await?;
+
+        Ok((
+            user_info.subscription.character_count,
+            user_info.subscription.character_limit,
+            chrono::DateTime::from_timestamp(user_info.subscription.next_character_count_reset_unix, 0),
+        ))
     }
 
     #[allow(dead_code)]
