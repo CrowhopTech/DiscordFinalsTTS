@@ -6,7 +6,9 @@ use serenity::all::EditMessage;
 use crate::commands::util::get_channel_name;
 use crate::elevenlabs::ElevenLabs;
 use crate::elevenlabs::media::MP3_44100HZ_128KBPS;
-use crate::elevenlabs::types::{KnownVoice, SpeechSpeed, VoiceSettings};
+use crate::elevenlabs::types::{
+    KnownVoice, SpeechModel, SpeechSpeed, VoiceSettings, get_default_speech_model,
+};
 use crate::streamutil::write_stream_to_vec_u8;
 use crate::types::{Context, Error};
 
@@ -17,6 +19,7 @@ pub async fn speak(
     #[description = "Voice to use"] voice: KnownVoice,
     #[description = "Text to speak"] text: String,
     #[description = "Speed of the speech"] speed: Option<SpeechSpeed>,
+    #[description = "Speech model to use"] model: Option<SpeechModel>,
 ) -> Result<(), Error> {
     let sent_msg_handle = ctx
         .send(CreateReply::default().content("Generating voice..."))
@@ -26,7 +29,7 @@ pub async fn speak(
         Error::from(e)
     })?;
 
-    let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed).await {
+    let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed, model).await {
         Err(e) => {
             ctx.send(CreateReply::default().content(format!("Failed to generate voice: {}", e)))
                 .await?;
@@ -57,6 +60,7 @@ pub async fn speak_vs(
     #[description = "Voice to use"] voice: KnownVoice,
     #[description = "Text to speak"] text: String,
     #[description = "Speed of the speech"] speed: Option<SpeechSpeed>,
+    #[description = "Speech model to use"] model: Option<SpeechModel>,
 ) -> Result<(), Error> {
     let guild = ctx.guild().ok_or("Not in a guild")?.id;
     let sctx = ctx.serenity_context();
@@ -85,7 +89,9 @@ pub async fn speak_vs(
                 Error::from(e)
             })?;
 
-            let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed).await {
+            let bytes = match generate_speech_bytes(&ctx.data().client, voice, text, speed, model)
+                .await
+            {
                 Err(e) => {
                     ctx.send(
                         CreateReply::default().content(format!("Failed to generate voice: {}", e)),
@@ -132,6 +138,7 @@ async fn generate_speech_bytes(
     voice: KnownVoice,
     text: String,
     speed: Option<SpeechSpeed>,
+    model: Option<SpeechModel>,
 ) -> Result<Vec<u8>, Error> {
     info!(
         voice = voice, speed = speed, text = text.as_str();
@@ -147,6 +154,7 @@ async fn generate_speech_bytes(
                     speed: Some(voice.get_speed(speed)),
                     ..voice.get_default_voice_settings()
                 }),
+                model.or_else(get_default_speech_model),
                 Some(MP3_44100HZ_128KBPS),
             )
             .await?,

@@ -4,12 +4,12 @@ pub mod responses;
 pub mod types;
 
 use bytes::Bytes;
+use chrono::DateTime;
 use log::{debug, error, info};
 use media::DEFAULT_OUTPUT_FORMAT;
 use responses::{UserInfo, VoiceList};
 use serde::Serialize;
-use types::VoiceSettings;
-use chrono::DateTime;
+use types::{SpeechModel, VoiceSettings};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -146,7 +146,10 @@ impl ElevenLabs {
         Ok((
             user_info.subscription.character_count,
             user_info.subscription.character_limit,
-            chrono::DateTime::from_timestamp(user_info.subscription.next_character_count_reset_unix, 0),
+            chrono::DateTime::from_timestamp(
+                user_info.subscription.next_character_count_reset_unix,
+                0,
+            ),
         ))
     }
 
@@ -162,6 +165,7 @@ impl ElevenLabs {
         voice_id: String,
         text: String,
         voice_settings: Option<VoiceSettings>,
+        model_id: Option<SpeechModel>,
         media_format: Option<&media::OutputFormat>,
     ) -> Result<impl futures_core::Stream<Item = reqwest::Result<Bytes>>, Error> {
         let final_format = match media_format {
@@ -180,7 +184,7 @@ impl ElevenLabs {
 
         info!(
             voice_id = voice_id.as_str(), text = text.as_str();
-            "Generating voice with options {:?}", voice_settings
+            "Generating voice with model {:?} and options {:?}", model_id, voice_settings
         );
 
         self.run_cursor_request_with_body(
@@ -188,7 +192,7 @@ impl ElevenLabs {
             Some(requests::CreateSpeechRequest {
                 text,
                 voice_settings,
-                model_id: None,
+                model_id: model_id.map(|m| m.get_id()),
             }),
         )
         .await

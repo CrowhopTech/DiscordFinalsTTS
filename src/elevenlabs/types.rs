@@ -49,6 +49,50 @@ impl ToValue for SpeechSpeed {
     }
 }
 
+// In case no model is provided and all checks fall through, this is what we will use
+const ABSOLUTE_DEFAULT_MODEL: SpeechModel = SpeechModel::ElevenMultilingualV2;
+
+#[derive(poise::ChoiceParameter, Debug, Clone, Copy)]
+pub enum SpeechModel {
+    ElevenV3,
+    ElevenMultilingualV2,
+    ElevenTurboV2,
+}
+
+impl SpeechModel {
+    pub fn get_id(&self) -> String {
+        match self {
+            SpeechModel::ElevenV3 => "eleven_v3",
+            SpeechModel::ElevenMultilingualV2 => "eleven_multilingual_v2",
+            SpeechModel::ElevenTurboV2 => "eleven_turbo_v2",
+        }
+        .to_string()
+    }
+}
+
+pub fn parse_speech_model(model: &str) -> Option<SpeechModel> {
+    match model.to_lowercase().as_str() {
+        "eleven_v3" => Some(SpeechModel::ElevenV3),
+        "eleven_multilingual_v2" => Some(SpeechModel::ElevenMultilingualV2),
+        "eleven_turbo_v2" => Some(SpeechModel::ElevenTurboV2),
+        _ => None,
+    }
+}
+
+pub fn get_default_speech_model() -> Option<SpeechModel> {
+    if let Ok(env_value) = std::env::var("DEFAULT_SPEECH_MODEL") {
+        if let Some(model) = parse_speech_model(&env_value) {
+            return Some(model);
+        }
+        error!(
+            "Invalid DEFAULT_SPEECH_MODEL env variable: {}. Valid values are eleven_v3, eleven_multilingual_v2, eleven_turbo_v2. Falling back to {}",
+            env_value,
+            ABSOLUTE_DEFAULT_MODEL.get_id()
+        );
+    }
+    return Some(ABSOLUTE_DEFAULT_MODEL);
+}
+
 #[derive(poise::ChoiceParameter, Debug)]
 pub enum KnownVoice {
     Scotty,
